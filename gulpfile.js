@@ -30,10 +30,11 @@ var through2 = require('through2');
 const changed = require('gulp-changed');
 
 var changedInPlace = require('gulp-changed-in-place');
-
+var pugLinter = require('gulp-pug-linter')
 var runSequence = require('run-sequence');
 var puglint = require('gulp-pug-lint');
 var gulpif = require('gulp-if');
+var plumber = require('gulp-plumber');
 
 var config = {
 	is_minified: false
@@ -69,10 +70,9 @@ gulp.task('pug:process', function() {
 		path.src_html + '**/*.pug'		
 		])
 
-	.pipe(changedInPlace.readFile())
-
-	.on("data", function(file){ console.log("file to process : " , file.path) })
-
+	// .pipe(changedInPlace.readFile())
+	.pipe(puglint())
+	
 	.pipe(through2.obj(function(chunk, encoding, callback) {
 
 		var options = { basedir: path.src_html, extension: '.pug', skip: 'node_modules'};
@@ -97,20 +97,32 @@ gulp.task('pug:process', function() {
 
 gulp.task('pug:compile', function() {
 	_path = _path.unique()
-
+	// _path = ["/home/jhon/htdocs/fronty/src/preprocessors/pug/about.pug"]
+	console.log("path : ", _path)
 	return gulp.src(_path)
 
-	.pipe(gulpif(function(file) {
-		return !/_/.test(file.path)
-	}, puglint()))
+	.on("data", function(file){ console.log("file to process : " , file.path) })
+	
+	// .pipe(gulpif(function(file) {
+	// 	return !/_/.test(file.path)
+	// }, puglint()))
+	// .pipe(puglint())
+	// .pipe(plumberNotifier())
+	// .pipe(plumber())
 
-	.pipe(changedInPlace.writeToFile())
+	// .pipe(pugLinter())
+	// .pipe(pugLinter.reporter())
+
+	// .pipe(puglint())
+	// .pipe(changedInPlace.writeToFile())
+
+	.on("data", function(file){ console.log("file  process : " , file.path) })
 	
 	.pipe(filter(function (file) {     	
 		return !/\/_/.test(file.path) && !/^_/.test(file.relative);
 	}))
 
-	.on("data", function(file){ console.log("processed files  : " ,file.path) })
+	// .on("data", function(file){ console.log("processed files  : " ,file.path) })
 
 	.pipe(pug({
 		pretty : !config.is_minified
