@@ -21,20 +21,23 @@ var consolidate = require("gulp-consolidate");
 var plumberNotifier = require('gulp-plumber-notifier');
 var bower = require('gulp-bower');
 var fs = require('fs');
+var notify = require("gulp-notify");
+var colors = require('colors');
 var filter = require('gulp-filter');
 
-var gulpPugInheritance = require('gulp-pug-inheritance')
+// var gulpPugInheritance = require('gulp-pug-inheritance')
 var pugInheritance = require('pug-inheritance');
 var through2 = require('through2');
 
 const changed = require('gulp-changed');
 
 var changedInPlace = require('gulp-changed-in-place');
-var pugLinter = require('gulp-pug-linter')
+// var pugLinter = require('gulp-pug-linter')
 var runSequence = require('run-sequence');
-var puglint = require('gulp-pug-lint');
-var gulpif = require('gulp-if');
+// var puglint = require('gulp-pug-lint');
+// var gulpif = require('gulp-if');
 var plumber = require('gulp-plumber');
+var notifier = require('node-notifier');
 
 var config = {
 	is_minified: false
@@ -62,7 +65,26 @@ Array.prototype.unique=function(a){
 		return this.filter(a)}}(function(a,b,c){return c.indexOf(a,b+1)<0
 		});
 
+gulp.task('html', function() {
+	gulp.src([
+		path.src_html + '*.pug',
+		path.src_html + '**/*.pug',
+		'!' + path.src_html + '_**/*.pug',
+		'!' + path.src_html + '/**/_**/*.pug',
+		'!' + path.src_html + '/**/_*.pug'
+		])
+		.pipe(plumber({ 
+          errorHandler: function(error) {
+          	var fullMessage = 'Error in plugins **' + error.plugin + '**:' + error.message;
+    			fullMessage = colors.bgRed.white(fullMessage);
 
+			console.log("Mensaje de Error :", fullMessage);
+          }}))
+		.pipe(pug({
+			pretty : !config.is_minified
+		}))
+		.pipe(gulp.dest(path.dist_html));
+});
 
 gulp.task('pug:process', function() {
 	return gulp.src([
@@ -70,64 +92,49 @@ gulp.task('pug:process', function() {
 		path.src_html + '**/*.pug'		
 		])
 
-	// .pipe(changedInPlace.readFile())
-	.pipe(puglint())
+		.pipe(changedInPlace.readFile())
+		.pipe(through2.obj(function(chunk, encoding, callback) {
+
+			var options = { basedir: path.src_html, extension: '.pug', skip: 'node_modules'};
+			var inheritance = new pugInheritance(chunk.path, options.basedir, options);
+			var inheritanceFiles = inheritance.files;        
+
+			if (inheritanceFiles.length >0) {
+				inheritanceFiles.forEach(function(file) {            
+					_path.push(path.src_html +  file)
+				});
+			}
+			else{
+				_path.push(chunk.path);
+			}
+			callback();
+		}))
 	
-	.pipe(through2.obj(function(chunk, encoding, callback) {
-
-		var options = { basedir: path.src_html, extension: '.pug', skip: 'node_modules'};
-		var inheritance = new pugInheritance(chunk.path, options.basedir, options);
-		var inheritanceFiles = inheritance.files;        
-		// inheritanceFiles.shift()
-
-		if (inheritanceFiles.length >0) {
-			inheritanceFiles.forEach(function(file) {            
-				_path.push(path.src_html +  file)
-			});
-
-		}
-		else{
-			_path.push(chunk.path);
-		}
-		callback();
-	}))
-
 });
 
 
 gulp.task('pug:compile', function() {
 	_path = _path.unique()
-	// _path = ["/home/jhon/htdocs/fronty/src/preprocessors/pug/about.pug"]
-	console.log("path : ", _path)
+	console.log("_path :" , _path)
 	return gulp.src(_path)
+		.pipe(plumber({ 
+			errorHandler: function(error) {
+				var fullMessage = 'Error in plugins **' + error.plugin + '**:' + error.message;
+				fullMessage = colors.bgRed.white(fullMessage);
 
-	.on("data", function(file){ console.log("file to process : " , file.path) })
-	
-	// .pipe(gulpif(function(file) {
-	// 	return !/_/.test(file.path)
-	// }, puglint()))
-	// .pipe(puglint())
-	// .pipe(plumberNotifier())
-	// .pipe(plumber())
+				console.log("Mensaje de Error :", fullMessage);
+			}}))
 
-	// .pipe(pugLinter())
-	// .pipe(pugLinter.reporter())
 
-	// .pipe(puglint())
-	// .pipe(changedInPlace.writeToFile())
+		.pipe(changedInPlace.writeToFile())
 
-	.on("data", function(file){ console.log("file  process : " , file.path) })
-	
-	.pipe(filter(function (file) {     	
-		return !/\/_/.test(file.path) && !/^_/.test(file.relative);
-	}))
-
-	// .on("data", function(file){ console.log("processed files  : " ,file.path) })
-
-	.pipe(pug({
-		pretty : !config.is_minified
-	}))
-	.pipe(gulp.dest(path.dist_html))
+		.pipe(filter(function (file) {     	
+			return !/\/_/.test(file.path) && !/^_/.test(file.relative);
+		}))
+		.pipe(pug({
+			pretty : !config.is_minified
+		}))
+		.pipe(gulp.dest(path.dist_html))
 });
 
 
