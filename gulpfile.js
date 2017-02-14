@@ -39,6 +39,11 @@ var runSequence = require('run-sequence');
 var plumber = require('gulp-plumber');
 var notifier = require('node-notifier');
 
+
+
+// Emitty
+
+
 var config = {
 	is_minified: false
 }
@@ -60,10 +65,10 @@ var path = {
 
 };
 var _path = [];
-Array.prototype.unique=function(a){
-	return	 function(){
-		return this.filter(a)}}(function(a,b,c){return c.indexOf(a,b+1)<0
-		});
+// Array.prototype.unique=function(a){
+// 	return	 function(){
+// 		return this.filter(a)}}(function(a,b,c){return c.indexOf(a,b+1)<0
+// 		});
 
 gulp.task('html', function() {
 	gulp.src([
@@ -73,17 +78,17 @@ gulp.task('html', function() {
 		'!' + path.src_html + '/**/_**/*.pug',
 		'!' + path.src_html + '/**/_*.pug'
 		])
-		.pipe(plumber({ 
-          errorHandler: function(error) {
-          	var fullMessage = 'Error in plugins **' + error.plugin + '**:' + error.message;
-    			fullMessage = colors.bgRed.white(fullMessage);
+	.pipe(plumber({ 
+		errorHandler: function(error) {
+			var fullMessage = 'Error in plugins **' + error.plugin + '**:' + error.message;
+			fullMessage = colors.bgRed.white(fullMessage);
 
 			console.log("Mensaje de Error :", fullMessage);
-          }}))
-		.pipe(pug({
-			pretty : !config.is_minified
-		}))
-		.pipe(gulp.dest(path.dist_html));
+		}}))
+	.pipe(pug({
+		pretty : !config.is_minified
+	}))
+	.pipe(gulp.dest(path.dist_html));
 });
 
 gulp.task('pug:process', function() {
@@ -92,59 +97,78 @@ gulp.task('pug:process', function() {
 		path.src_html + '**/*.pug'		
 		])
 
-		.pipe(changedInPlace.readFile())
-		.pipe(through2.obj(function(chunk, encoding, callback) {
+	.pipe(changedInPlace.readFile())
+	// .pipe(through2.obj(function(chunk, encoding, callback) {
 
-			var options = { basedir: path.src_html, extension: '.pug', skip: 'node_modules'};
-			var inheritance = new pugInheritance(chunk.path, options.basedir, options);
-			var inheritanceFiles = inheritance.files;        
+	// 	var options = { basedir: path.src_html, extension: '.pug', skip: 'node_modules'};
+	// 	var inheritance = new pugInheritance(chunk.path, options.basedir, options);
+	// 	var inheritanceFiles = inheritance.files;        
 
-			if (inheritanceFiles.length >0) {
-				inheritanceFiles.forEach(function(file) {            
-					_path.push(path.src_html +  file)
-				});
-			}
-			else{
-				_path.push(chunk.path);
-			}
-			callback();
-		}))
-	
+	// 	if (inheritanceFiles.length >0) {
+	// 		inheritanceFiles.forEach(function(file) {            
+	// 			_path.push(path.src_html +  file)
+	// 			console.log(file)
+	// 		});
+	// 	}
+	// 	else{
+	// 		_path.push(chunk.path);
+	// 	}
+	// 	callback();
+	// }))
+	.on("end", function () {
+		console.log("finalizo")
+	})
+
 });
-
-
 gulp.task('pug:compile', function() {
 	_path = _path.unique()
 	console.log("_path :" , _path)
 	return gulp.src(_path)
-		.pipe(plumber({ 
-			errorHandler: function(error) {
-				var fullMessage = 'Error in plugins **' + error.plugin + '**:' + error.message;
-				fullMessage = colors.bgRed.white(fullMessage);
+	.pipe(plumber({ 
+		errorHandler: function(error) {
+			var fullMessage = 'Error in plugins **' + error.plugin + '**:' + error.message;
+			fullMessage = colors.bgRed.white(fullMessage);
 
-				console.log("Mensaje de Error :", fullMessage);
-			}}))
+			console.log("Mensaje de Error :", fullMessage);
+		}}))
+	.on("data", function(file){console.log("file : ", file.path)})
 
+	.pipe(changedInPlace.writeToFile())
 
-		.pipe(changedInPlace.writeToFile())
-
-		.pipe(filter(function (file) {     	
-			return !/\/_/.test(file.path) && !/^_/.test(file.relative);
-		}))
-		.pipe(pug({
-			pretty : !config.is_minified
-		}))
-		.pipe(gulp.dest(path.dist_html))
+	.pipe(filter(function (file) {     	
+		return !/\/_/.test(file.path) && !/^_/.test(file.relative);
+	}))
+	.pipe(pug({
+		pretty : !config.is_minified
+	}))
+	.pipe(gulp.dest(path.dist_html))
 });
 
 
 
 gulp.task('pug', function(cb) {
-	runSequence('pug:process',
-		'pug:compile',
+	return runSequence('pug:process',// 'pug:compile',
 		cb);
 });
 
+
+emitty = require('emitty').setup(path.src_html, 'pug');
+gulp.task('emitty', function(){
+	emitty.scan().then(() => {
+
+		storage = emitty.storage();
+		console.log("emitty.storage()",storage);
+		// for(item in storage){
+		// 	if(/jadeflux\/modules/.test(item)){
+		// 		var dependModulea = storage[item].dependencies;
+		// 		if (dependModule.length > 0){
+		// 			recursivePug(item, true);
+		// 		}
+		// 	}
+		// }
+	});
+		// console.log("========================");
+});
 gulp.task('stylus', function () {
 	console.log("path.src_css", path.src_css);
 	console.log("path.dist_css", path.dist_css);
