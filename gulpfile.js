@@ -25,7 +25,7 @@ var notify = require("gulp-notify");
 var colors = require('colors');
 var filter = require('gulp-filter');
 
-// var gulpPugInheritance = require('gulp-pug-inheritance')
+var gulpPugInheritance = require('gulp-pug-inheritance')
 var pugInheritance = require('pug-inheritance');
 var through2 = require('through2');
 
@@ -85,6 +85,28 @@ gulp.task('html', function() {
 
 			console.log("Mensaje de Error :", fullMessage);
 		}}))
+	.pipe(pug({
+		pretty : !config.is_minified
+	}))
+	.pipe(gulp.dest(path.dist_html));
+});
+gulp.task('prueba', function() {
+	gulp.src([
+		path.src_html + '*.pug',
+		path.src_html + '**/*.pug',
+		'!' + path.src_html + '_**/*.pug',
+		'!' + path.src_html + '/**/_**/*.pug',
+		'!' + path.src_html + '/**/_*.pug'
+		])
+	.pipe(plumber({ 
+		errorHandler: function(error) {
+			var fullMessage = 'Error in plugins **' + error.plugin + '**:' + error.message;
+			fullMessage = colors.bgRed.white(fullMessage);
+
+			console.log("Mensaje de Error :", fullMessage);
+		}}))
+	.pipe(gulpPugInheritance())
+	.on("data", function(file){console.log("Paso : ", file.path)})
 	.pipe(pug({
 		pretty : !config.is_minified
 	}))
