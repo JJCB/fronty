@@ -38,7 +38,7 @@ var runSequence = require('run-sequence');
 // var gulpif = require('gulp-if');
 var plumber = require('gulp-plumber');
 var notifier = require('node-notifier');
-
+watch = require('gulp-watch');
 
 
 // Emitty
@@ -91,12 +91,13 @@ gulp.task('html', function() {
 	.pipe(gulp.dest(path.dist_html));
 });
 gulp.task('prueba', function() {
+	console.log
 	gulp.src([
 		path.src_html + '*.pug',
-		path.src_html + '**/*.pug',
-		'!' + path.src_html + '_**/*.pug',
-		'!' + path.src_html + '/**/_**/*.pug',
-		'!' + path.src_html + '/**/_*.pug'
+		path.src_html + '**/*.pug'
+		// '!' + path.src_html + '_**/*.pug',
+		// '!' + path.src_html + '/**/_**/*.pug',
+		// '!' + path.src_html + '/**/_*.pug'
 		])
 	.pipe(plumber({ 
 		errorHandler: function(error) {
@@ -113,6 +114,29 @@ gulp.task('prueba', function() {
 	.pipe(gulp.dest(path.dist_html));
 });
 
+gulp.task('cambio', function() {
+	gulpPugInheritance({directory:path.src_html,type : "nuevo"})
+	console.log("hola")
+	return watch([path.src_html + '**/*.pug'], fnChange );
+});
+
+function fnChange(cb){
+	var obten = gulpPugInheritance({"path" :  cb});
+	// console.log("obten : ", obten)
+}
+// gulp.task('fnChange', function(cb) {
+	// console.log("cb : ", cb)
+	// return gulp.src([
+	// 	path.src_html + '*.pug',
+	// 	path.src_html + '**/*.pug'		
+	// 	])
+
+	// .pipe(changedInPlace.readFile())
+	// .on("end", function () {
+	// 	console.log("finalizo")
+	// })
+
+// });
 gulp.task('pug:process', function() {
 	return gulp.src([
 		path.src_html + '*.pug',
@@ -120,28 +144,12 @@ gulp.task('pug:process', function() {
 		])
 
 	.pipe(changedInPlace.readFile())
-	// .pipe(through2.obj(function(chunk, encoding, callback) {
-
-	// 	var options = { basedir: path.src_html, extension: '.pug', skip: 'node_modules'};
-	// 	var inheritance = new pugInheritance(chunk.path, options.basedir, options);
-	// 	var inheritanceFiles = inheritance.files;        
-
-	// 	if (inheritanceFiles.length >0) {
-	// 		inheritanceFiles.forEach(function(file) {            
-	// 			_path.push(path.src_html +  file)
-	// 			console.log(file)
-	// 		});
-	// 	}
-	// 	else{
-	// 		_path.push(chunk.path);
-	// 	}
-	// 	callback();
-	// }))
 	.on("end", function () {
 		console.log("finalizo")
 	})
 
 });
+
 gulp.task('pug:compile', function() {
 	_path = _path.unique()
 	console.log("_path :" , _path)
@@ -190,7 +198,7 @@ gulp.task('emitty', function(){
 		// }
 	});
 		// console.log("========================");
-});
+	});
 gulp.task('stylus', function () {
 	console.log("path.src_css", path.src_css);
 	console.log("path.dist_css", path.dist_css);
